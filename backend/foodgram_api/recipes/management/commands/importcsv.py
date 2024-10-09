@@ -1,0 +1,36 @@
+from django.core import management
+from django.core.management.base import BaseCommand
+from django.db import models
+from django.contrib.auth import get_user_model
+
+from recipes.models import Ingredient
+
+CSV_DIR = '../../data/'
+FILE_NAME = 'ingredients.csv'
+
+User = get_user_model()
+
+def import_model(file_path: str, model: models.Model):
+    """Импорт данных из cvs файла в модель."""
+    with open(file_path, 'r', encoding='utf-8') as file:
+        id = 1
+        for row in file:
+            if '"' not in row:
+                model.objects.get_or_create(id=id, measurement_unit=row.split(',')[1], name=row.split(',')[0])
+            else:
+                model.objects.get_or_create(id=id, measurement_unit=row.split('",')[1], name=row.split('",')[0])
+            id += 1
+
+
+class Command(BaseCommand):
+    help = 'import CSV Data into model Ingredient'
+
+    management.call_command('migrate')
+    superuser = User.objects.create_superuser(
+            username='admin',
+            password='admin')
+    superuser.save()
+
+    def handle(self, *args, **options):
+        import_model(CSV_DIR + FILE_NAME, Ingredient)
+        self.stdout.write(self.style.SUCCESS('Данные добавлены'))
