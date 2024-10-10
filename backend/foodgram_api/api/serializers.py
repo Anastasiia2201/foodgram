@@ -110,7 +110,7 @@ class UserSerializer(serializers.ModelSerializer):
     def subscribe(self, obj):
         user = CurrentUserDefault()
         try:
-            Subscription.objects.get(user=user.id, subscriber=obj.id)
+            Subscription.objects.get(user=obj.id, subscriber=user.id)
             return True
         except:
             return False
@@ -119,7 +119,6 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'id', 'username', 'is_subscribed',
                   'first_name', 'last_name', 'avatar')
-
 
 
 class RecepieIngredientSerializer(serializers.ModelSerializer):
@@ -226,3 +225,31 @@ class RecipeShortDisplaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class UserSubsciptionsSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField(required=False, allow_null=True)
+    is_subscribed = serializers.SerializerMethodField('subscribe')
+    recipes_count = serializers.SerializerMethodField('count')
+    recipes = serializers.SerializerMethodField('user_recipes', allow_null=True)
+
+    def subscribe(self, obj):
+        return True
+
+    def count(self, instance):
+        try:
+            recipes_count = len(Recipe.objects.get(author=instance.id))
+            return recipes_count
+        except:
+            return 0
+
+    def user_recipes(self, instance):
+        serilizer = RecipeShortDisplaySerializer(Recipe.objects.filter(author=instance.id), many=True)
+        return serilizer.data
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'is_subscribed',
+                  'first_name', 'last_name','recipes', 'recipes_count',
+                  'avatar')
+

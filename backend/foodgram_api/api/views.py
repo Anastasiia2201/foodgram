@@ -15,13 +15,15 @@ from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly,
     SAFE_METHODS)
 from django_url_shortener.utils import shorten_url
-
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Q, F
 from recipes.models import (
     Tag,
     Recipe,
     Ingredient,
     Favorite,
     ShoppingCart,
+    Subscription
 )
 from .serializers import (
     UserSerializer,
@@ -32,8 +34,8 @@ from .serializers import (
     TagSerializer,
     RecipeDisplaySerializer,
     RecepieInputSerializer,
-    RecipeShortDisplaySerializer
-
+    RecipeShortDisplaySerializer,
+    UserSubsciptionsSerializer,
 )
 
 User = get_user_model()
@@ -58,6 +60,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    pagination_class = PageNumberPagination
 
     @action(
         detail=False,
@@ -101,6 +104,46 @@ class UserViewSet(viewsets.ModelViewSet):
             request.user.save()
         return Response(serializer.data)
 
+    @action(
+        detail=False,
+        methods=['GET'],
+  
+        url_path='subscriptions',
+    )
+    def subscriptions(self, request):
+        subscriber = User.objects.get(pk=2)
+        subscribed_to = Subscription.objects.all().filter(subscriber=subscriber)
+        queryset = User.objects.all().filter(pk__in=[user.user.id for user in subscribed_to])
+        page = self.paginate_queryset(queryset)
+        serializer = UserSubsciptionsSerializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    @action(
+        detail=False,
+        methods=['POST', 'DELETE'],
+  
+        url_path=r'(?P<id>\d+)/subscriptions',
+    )
+    def subscriptions(self, request, id):
+        subscriber = User.objects.get(pk=2)
+        user = get_object_or_404(User, pk=id)
+        if request.method == 'POST':
+            try:
+                Subscription.objects.get(subscriber=subscriber, user=id)
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            except:
+                serializer = UserSubsciptionsSerializer(user)
+                if subscriber.id != user.id:
+                    Subscription.objects.create(subscriber=subscriber, user=user)
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response('Нельзя подписаться на самого себя!', status=status.HTTP_400_BAD_REQUEST)
+        try:
+            sub = Subscription.objects.get(subscriber=subscriber, user=id)
+            sub.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Recipe."""
@@ -139,13 +182,35 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 return Response(status=status.HTTP_400_BAD_REQUEST)
             except:
                 ShoppingCart.objects.create(user=user, recipe=recipe)
-                return Response(serializer.data)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
         try:
-            ShoppingCart.objects.get(user=user, recipe=recipe)
-            ShoppingCart.objects.delete(user=user, recipe=recipe)
-            ShoppingCart.save()
+            entry = ShoppingCart.objects.get(user=user, recipe=recipe)
+            entry.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-
+    @action(
+        detail=False,
+        methods=['POST', 'DELETE'],
+ #       permission_classes=[IsAuthenticated],
+        url_path=r'(?P<id>\d+)/favorite',
+    )
+    def favorite(self, request, id):
+  #      user = request.user
+        user = User.objects.get(pk=1)
+        recipe = get_object_or_404(Recipe, pk=id)
+        if request.method == 'POST':
+            serializer = RecipeShortDisplaySerializer(recipe)
+            try:
+                Favorite.objects.get(user=user, recipe=recipe)
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            except:
+                Favorite.objects.create(user=user, recipe=recipe)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            entry = Favorite.objects.get(user=user, recipe=recipe)
+            entry.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
