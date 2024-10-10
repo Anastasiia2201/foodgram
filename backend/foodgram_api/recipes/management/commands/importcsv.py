@@ -26,10 +26,6 @@ class Command(BaseCommand):
     help = 'import CSV Data into model Ingredient'
 
     management.call_command('migrate')
-    superuser = User.objects.create_superuser(
-            username='admin',
-            password='admin')
-    superuser.save()
 
     def handle(self, *args, **options):
         import_model(CSV_DIR + FILE_NAME, Ingredient)
