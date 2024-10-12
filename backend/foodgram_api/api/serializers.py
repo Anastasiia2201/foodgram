@@ -73,6 +73,24 @@ class SignupSerializer(serializers.ModelSerializer):
             )
         return value
 
+    @staticmethod
+    def validate_first_name(value):
+        """Проверка имени пользователя."""
+        if len(value) >= 150:
+            raise serializers.ValidationError(
+                f'Имя {value} слишком длинное (>=150 символов)'
+            )
+        return value
+
+    @staticmethod
+    def validate_last_name(value):
+        """Проверка имени пользователя."""
+        if len(value) >= 150:
+            raise serializers.ValidationError(
+                f'Имя {value} слишком длинное (>=150 символов)'
+            )
+        return value
+
     def validate(self, attrs):
         username = attrs.get('username')
         email = attrs.get('email')
@@ -104,6 +122,16 @@ class  TokenSerializer(serializers.ModelSerializer):
         fields = ('password', 'email')
         model = User
 
+    def validate(self, attrs):
+        password = attrs.get('password')
+        email = attrs.get('email')
+        try:
+            User.objects.get(
+                password=password,
+                email=email)
+        except User.DoesNotExist:
+                raise serializers.ValidationError('некорректный пароль!')
+        return attrs
 
 class UpdateAvatarSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=True, allow_null=False)
@@ -120,6 +148,15 @@ class UpdatePasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('new_password', 'current_password')
+
+    def validate_current_password(self, value):
+        user = CurrentUserDefault()
+        try:
+            User.objects.get(id=user(self).id, password=value)
+        except:
+            raise ValidationError({'current_password': 'Неправильный пароль!'})
+        return value
+
 
 class UserSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=False, allow_null=True)
@@ -167,17 +204,38 @@ class RecepieIngredientInputSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount')
 
 
+
 class RecipeInputSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Recipe."""
 
-    ingredients = RecepieIngredientInputSerializer(many=True, write_only=True)
+    ingredients = RecepieIngredientInputSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
-    image = Base64ImageField(required=False, allow_null=True)
+    image = Base64ImageField(required=True)
     author = serializers.HiddenField(default=CurrentUserDefault())
 
     class Meta:
         model = Recipe
         fields = ('ingredients', 'tags', 'image', 'name', 'text', 'cooking_time', 'author')
+
+    def validate_ingredients(self, value):
+        if not value:
+            raise ValidationError('Введите ингредиенты!')
+        ids = [ingredient.get('id') for ingredient in value]
+        if len(set(ids)) < len(ids):
+            raise ValidationError('Повторяющиеся ингредиенты!')
+        return value
+
+    def validate_tags(self, value):
+        if not value:
+            raise ValidationError('Введите теги!')
+        if len(set(value)) < len(value):
+            raise ValidationError('Повторяющиеся теги!')
+        return value
+
+    def validate_cooking_time(self, value):
+        if value < 1:
+            raise ValidationError('Время меньше 1!')
+        return value
 
     def to_representation(self, instance):
         serialiser = RecipeDisplaySerializer(instance, context=self.context)
@@ -262,7 +320,8 @@ class UserSubsciptionsSerializer(serializers.ModelSerializer):
             return 0
 
     def user_recipes(self, instance):
-        serilizer = RecipeShortDisplaySerializer(Recipe.objects.filter(author=instance.id), many=True)
+        recipes_limit = int(self.context['recipes_limit'])
+        serilizer = RecipeShortDisplaySerializer(Recipe.objects.filter(author=instance.id).order_by('id')[:recipes_limit], many=True)
         return serilizer.data
 
     class Meta:
