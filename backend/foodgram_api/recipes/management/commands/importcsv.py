@@ -16,9 +16,13 @@ def import_model(file_path: str, model: models.Model):
         id = 1
         for row in file:
             if '"' not in row:
-                model.objects.get_or_create(id=id, measurement_unit=row.split(',')[1], name=row.split(',')[0])
+                measurement_unit = row.split(',')[1][:-2]
+                name = row.split(',')[0]
+                model.objects.get_or_create(id=id, measurement_unit=measurement_unit, name=name)
             else:
-                model.objects.get_or_create(id=id, measurement_unit=row.split('",')[1], name=row.split('",')[0])
+                measurement_unit = row.split('",')[1][:-2]
+                name = row.split('",')[0].replace('"', '')
+                model.objects.get_or_create(id=id, measurement_unit=measurement_unit, name=name)
             id += 1
 
 

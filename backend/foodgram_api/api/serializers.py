@@ -17,6 +17,7 @@ from recipes.models import (
     RecipeIngredient,
     RecipeTag,
     )
+from recipes.constants import MAX_LENGTH_EMAIL, MAX_LENGTH_USERNAME
 
 User = get_user_model()
 
@@ -50,6 +51,14 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 class SignupSerializer(serializers.ModelSerializer):
 
+    username = serializers.CharField(
+        required=True,
+        max_length=MAX_LENGTH_USERNAME)
+    email = serializers.EmailField(required=True, max_length=MAX_LENGTH_EMAIL)
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+
     class Meta:
         model = User
         fields = ('email', 'id', 'username',
@@ -64,55 +73,101 @@ class SignupSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def validate(self, attrs):
-        email = attrs.get('email')
-        username = attrs.get('username')
-        wrong_username = False
-        wrong_email = False
-        try:
-            user_with_email = User.objects.get(email=email)
-            if user_with_email.username != username:
-                wrong_username = True
-        except User.DoesNotExist:
-            pass
-
-        try:
-            user_with_username = User.objects.get(username=username)
-            if user_with_username.email != email:
-                wrong_email = True
-        except User.DoesNotExist:
-            pass
-
-        if wrong_username and wrong_email:
+    @staticmethod
+    def validate_first_name(value):
+        """Проверка имени пользователя."""
+        if len(value) >= 150:
             raise serializers.ValidationError(
-                {'username': username,
-                 'email': email})
-        elif wrong_username:
-            raise serializers.ValidationError({'email': email})
-        elif wrong_email:
-            raise serializers.ValidationError({'username': username})
+                f'Имя {value} слишком длинное (>=150 символов)'
+            )
+        return value
+
+    @staticmethod
+    def validate_last_name(value):
+        """Проверка имени пользователя."""
+        if len(value) >= 150:
+            raise serializers.ValidationError(
+                f'Имя {value} слишком длинное (>=150 символов)'
+            )
+        return value
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        email = attrs.get('email')
+        try:
+            User.objects.get(username=username)
+            raise serializers.ValidationError('username занят!')
+        except User.DoesNotExist:
+            try:
+                User.objects.get(email=email)
+                raise serializers.ValidationError('email занят!')
+            except User.DoesNotExist:
+                pass
         return attrs
 
 
+class UserShortSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username',
+                  'first_name', 'last_name',)
+
+
+class  TokenSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(required=True)
+    email = serializers.CharField(required=True)
+    
+    class Meta:
+        fields = ('password', 'email')
+        model = User
+
+    def validate(self, attrs):
+        password = attrs.get('password')
+        email = attrs.get('email')
+        try:
+            User.objects.get(
+                password=password,
+                email=email)
+        except User.DoesNotExist:
+                raise serializers.ValidationError('некорректный пароль!')
+        return attrs
+
 class UpdateAvatarSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=True, allow_null=False)
+
+    class Meta:
+        model = User
+        fields = ('avatar',)
 
 
 class UpdatePasswordSerializer(serializers.ModelSerializer):
     new_password = serializers.CharField(required=True)
     current_password = serializers.CharField(required=True)
 
+    class Meta:
+        model = User
+        fields = ('new_password', 'current_password')
+
+    def validate_current_password(self, value):
+        user = CurrentUserDefault()
+        try:
+            User.objects.get(id=user(self).id, password=value)
+        except:
+            raise ValidationError({'current_password': 'Неправильный пароль!'})
+        return value
+
 
 class UserSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=False, allow_null=True)
     is_subscribed = serializers.SerializerMethodField('subscribe')
 
-    def subscribe(self, obj):
+    def subscribe(self, instance):
         user = CurrentUserDefault()
         try:
-            Subscription.objects.get(user=obj.id, subscriber=user.id)
+            Subscription.objects.get(user=instance.id, subscriber=user(self))
             return True
-        except:
+        except Exception:
             return False
 
     class Meta:
@@ -149,20 +204,41 @@ class RecepieIngredientInputSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount')
 
 
-class RecepieInputSerializer(serializers.ModelSerializer):
+
+class RecipeInputSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Recipe."""
 
-    ingredients = RecepieIngredientInputSerializer(many=True, write_only=True)
+    ingredients = RecepieIngredientInputSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
-    image = Base64ImageField(required=False, allow_null=True)
-    author = serializers.HiddenField(default=User.objects.get(id=1))
+    image = Base64ImageField(required=True)
+    author = serializers.HiddenField(default=CurrentUserDefault())
 
     class Meta:
         model = Recipe
         fields = ('ingredients', 'tags', 'image', 'name', 'text', 'cooking_time', 'author')
 
+    def validate_ingredients(self, value):
+        if not value:
+            raise ValidationError('Введите ингредиенты!')
+        ids = [ingredient.get('id') for ingredient in value]
+        if len(set(ids)) < len(ids):
+            raise ValidationError('Повторяющиеся ингредиенты!')
+        return value
+
+    def validate_tags(self, value):
+        if not value:
+            raise ValidationError('Введите теги!')
+        if len(set(value)) < len(value):
+            raise ValidationError('Повторяющиеся теги!')
+        return value
+
+    def validate_cooking_time(self, value):
+        if value < 1:
+            raise ValidationError('Время меньше 1!')
+        return value
+
     def to_representation(self, instance):
-        serialiser = RecipeDisplaySerializer(instance)
+        serialiser = RecipeDisplaySerializer(instance, context=self.context)
         return serialiser.data
 
     def create_recipeingredient(self, ingredients, recipe):
@@ -199,17 +275,17 @@ class RecipeDisplaySerializer(serializers.ModelSerializer):
     def favorite(self, validated_data):
         user = CurrentUserDefault()
         try:
-            Favorite.objects.get(user=user.id, recipe=validated_data.get('id'))
+            Favorite.objects.get(user=user(self), recipe=validated_data.id)
             return True
-        except:
+        except Exception:
             return False
 
     def cart(self, validated_data):
         user = CurrentUserDefault()
         try:
-            ShoppingCart.objects.get(user=user.id, recipe=validated_data.get('id'))
+            ShoppingCart.objects.get(user=user(self), recipe=validated_data.id)
             return True
-        except:
+        except Exception:
             return False
 
     class Meta:
@@ -238,13 +314,14 @@ class UserSubsciptionsSerializer(serializers.ModelSerializer):
 
     def count(self, instance):
         try:
-            recipes_count = len(Recipe.objects.get(author=instance.id))
+            recipes_count = len(Recipe.objects.filter(author=instance.id))
             return recipes_count
-        except:
+        except Recipe.DoesNotExist:
             return 0
 
     def user_recipes(self, instance):
-        serilizer = RecipeShortDisplaySerializer(Recipe.objects.filter(author=instance.id), many=True)
+        recipes_limit = int(self.context['recipes_limit'])
+        serilizer = RecipeShortDisplaySerializer(Recipe.objects.filter(author=instance.id).order_by('id')[:recipes_limit], many=True)
         return serilizer.data
 
     class Meta:
@@ -252,3 +329,4 @@ class UserSubsciptionsSerializer(serializers.ModelSerializer):
         fields = ('email', 'id', 'username', 'is_subscribed',
                   'first_name', 'last_name','recipes', 'recipes_count',
                   'avatar')
+
