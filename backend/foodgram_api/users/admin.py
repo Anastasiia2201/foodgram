@@ -5,9 +5,18 @@ from .models import User
 
 
 class CustomUserAdmin(UserAdmin):
-    list_display = UserAdmin.list_display + ('avatar', 'role',)
-    list_editable = UserAdmin.list_editable + ('avatar', 'role',)
-    search_fields = ('email', 'username',) 
+    list_display = UserAdmin.list_display + (
+        "avatar",
+        "role",
+    )
+    list_editable = UserAdmin.list_editable + (
+        "avatar",
+        "role",
+    )
+    search_fields = (
+        "email",
+        "username",
+    )
 
 
 admin.site.register(User, CustomUserAdmin)

@@ -1,6 +1,6 @@
 CHAR_FIELD_MAX_LENGTH = 256
 MAX_LENGTH_USERNAME = 150
 MAX_LENGTH_EMAIL = 254
-AVATAR_DIR = 'users/'
-RECIPE_DIR = 'recipes/images/'
+AVATAR_DIR = "users/"
+RECIPE_DIR = "recipes/images/"
 AMOUNT_MIN = 1

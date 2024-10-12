@@ -5,11 +5,11 @@ from recipes.constants import AVATAR_DIR
 
 
 class Roles:
-    USER = 'user'
-    ADMIN = 'admin'
+    USER = "user"
+    ADMIN = "admin"
     CHOICES = (
-        (USER, 'Пользователь'),
-        (ADMIN, 'Администратор'),
+        (USER, "Пользователь"),
+        (ADMIN, "Администратор"),
     )
 
     @classmethod
@@ -19,27 +19,27 @@ class Roles:
 
 class User(AbstractUser):
     avatar = models.ImageField(
-        upload_to=AVATAR_DIR, 
-        null=True,  
+        upload_to=AVATAR_DIR,
+        null=True,
         default=None,
         blank=True,
-        verbose_name = 'Аватар'
+        verbose_name="Аватар"
     )
     role = models.CharField(
-        'Роль',
+        "Роль",
         max_length=Roles.max_length_number_role(),
         choices=Roles.CHOICES,
-        default=Roles.USER
+        default=Roles.USER,
     )
 
     class Meta:
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
-        ordering = ('id',)
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
+        ordering = ("id",)
 
     def __str__(self):
         return self.username
- 
+
     def is_subscribed(self):
         return True
 
