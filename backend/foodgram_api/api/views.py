@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
-from django.conf import settings
 from django_filters.rest_framework import DjangoFilterBackend
 from django_url_shortener.utils import shorten_url
 from rest_framework import status, viewsets
@@ -234,8 +233,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def get_link(self, request, id):
         """Получить короткую ссылку на рецепт."""
-        created, short_url = shorten_url(settings.ALLOWED_HOSTS[2]
-                                         + request.path[:-9])
+        created, short_url = shorten_url(request.path[:-9])
         return Response({"short-link": short_url}, status=status.HTTP_200_OK)
 
     @action(
