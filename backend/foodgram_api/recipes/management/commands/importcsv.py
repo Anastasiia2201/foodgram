@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 
 from recipes.models import Ingredient, Tag, Recipe, RecipeIngredient, RecipeTag
 
-CSV_DIR = "../data/"
+CSV_DIR = "../data/data/"
 FILE_NAMES = {
     "ingredients": "ingredients.csv",
     "tags": "tags.csv",
