@@ -177,6 +177,9 @@ class ShoppingCart(BaseCartFavoriteSubscription):
         Recipe, on_delete=models.CASCADE, related_name="in_cart"
     )
 
+    def __str__(self):
+        return f"{self.recipe} {self.user}"
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -192,6 +195,9 @@ class Favorite(BaseCartFavoriteSubscription):
         Recipe, on_delete=models.CASCADE, related_name="favorites"
     )
 
+    def __str__(self):
+        return f"{self.recipe} {self.user}"
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -206,6 +212,9 @@ class Subscription(BaseCartFavoriteSubscription):
     subscribee = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="subscribers"
     )
+
+    def __str__(self):
+        return f"{self.subscribee} {self.user}"
 
     class Meta:
         constraints = [

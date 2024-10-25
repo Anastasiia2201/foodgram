@@ -31,6 +31,7 @@ from .serializers import (IngredientSerializer, RecipeDisplaySerializer,
 
 User = get_user_model()
 
+
 def output_ingredients(ingredients):
     ingredients_list: dict[str:[str, int]] = {}
     for ingredient in ingredients:

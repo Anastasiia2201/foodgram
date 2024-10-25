@@ -10,12 +10,9 @@ from rest_framework.validators import UniqueValidator
 
 from recipes.constants import MAX_LENGTH_EMAIL, MAX_LENGTH_USERNAME
 from recipes.models import (
-    Favorite,
     Ingredient,
     Recipe,
     RecipeIngredient,
-    ShoppingCart,
-    Subscription,
     Tag,
 )
 
