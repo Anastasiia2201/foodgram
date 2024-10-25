@@ -1,9 +1,14 @@
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import F, Q
 
-from recipes.constants import AMOUNT_MIN, CHAR_FIELD_MAX_LENGTH, RECIPE_DIR
+from recipes.constants import (
+    AMOUNT_MAX,
+    AMOUNT_MIN,
+    CHAR_FIELD_MAX_LENGTH,
+    RECIPE_DIR,
+)
 
 User = get_user_model()
 
@@ -56,29 +61,39 @@ class Recipe(models.Model):
         verbose_name="Название", max_length=CHAR_FIELD_MAX_LENGTH
     )
     cooking_time = models.PositiveSmallIntegerField(
-        verbose_name="Время готовки в мин."
+        verbose_name="Время готовки в мин.",
+        validators=[
+            MinValueValidator(
+                AMOUNT_MIN,
+                message=f"Время не может быть меньше {AMOUNT_MIN}.",
+            ),
+            MaxValueValidator(
+                AMOUNT_MAX,
+                message=f"Время не может быть больше {AMOUNT_MAX}.",
+            ),
+        ],
     )
     text = models.TextField(verbose_name="Текст")
     author = models.ForeignKey(
         User,
         verbose_name="Автор",
         on_delete=models.CASCADE,
+        related_name="recipes",
     )
     image = models.ImageField(
         upload_to=RECIPE_DIR,
-        null=True,
-        default=None,
-        blank=True,
         verbose_name="Картинка",
     )
     tags = models.ManyToManyField(
-        Tag, verbose_name="Тег", through="RecipeTag", blank=False
+        Tag,
+        verbose_name="Тег",
+        through="RecipeTag",
+        blank=False,
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         verbose_name="Ингредиент",
         through="RecipeIngredient",
-        blank=False,
     )
 
     class Meta:
@@ -124,6 +139,10 @@ class RecipeIngredient(models.Model):
                 AMOUNT_MIN,
                 message=f"Количество не может быть меньше {AMOUNT_MIN}.",
             ),
+            MaxValueValidator(
+                AMOUNT_MAX,
+                message=f"Количество не может быть больше {AMOUNT_MAX}.",
+            ),
         ],
     )
 
@@ -154,7 +173,9 @@ class BaseCartFavoriteSubscription(models.Model):
 class ShoppingCart(BaseCartFavoriteSubscription):
     """Модель ShoppingCarts (Список покупок)."""
 
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE, related_name="in_cart"
+    )
 
     class Meta:
         constraints = [
@@ -167,7 +188,9 @@ class ShoppingCart(BaseCartFavoriteSubscription):
 class Favorite(BaseCartFavoriteSubscription):
     """Модель Favorites (Избранное)."""
 
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.CASCADE, related_name="favorites"
+    )
 
     class Meta:
         constraints = [
@@ -180,16 +203,16 @@ class Favorite(BaseCartFavoriteSubscription):
 class Subscription(BaseCartFavoriteSubscription):
     """Модель Subscriptions (Подписки)."""
 
-    subscriber = models.ForeignKey(
+    subscribee = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="subscribers"
     )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["subscriber", "user"], name="subscribe_once"
+                fields=["subscribee", "user"], name="subscribe_once"
             ),
             models.CheckConstraint(
-                name="cant_self_subscribe", check=~Q(user=F("subscriber"))
+                name="cant_self_subscribe", check=~Q(user=F("subscribee"))
             ),
         ]

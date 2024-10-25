@@ -1,7 +1,13 @@
 from django.contrib import admin
 
-from .models import (Favorite, Ingredient, Recipe,
-                     RecipeIngredient, RecipeTag, Tag)
+from .models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    RecipeTag,
+    Tag,
+)
 
 
 class TagInline(admin.TabularInline):
@@ -14,8 +20,8 @@ class IngredientInline(admin.TabularInline):
     extra = 0
 
 
+@admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-
     inlines = [TagInline, IngredientInline]
     search_fields = ("author__username", "name")
     list_display = ("name", "author", "get_favorites")
@@ -27,11 +33,10 @@ class RecipeAdmin(admin.ModelAdmin):
         return len(Favorite.objects.get(recipe=obj.id))
 
 
+@admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     search_fields = ("name",)
     list_display = ("name", "measurement_unit")
 
 
-admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Tag)
-admin.site.register(Ingredient, IngredientAdmin)

@@ -2,9 +2,15 @@ from django.contrib.auth import get_user_model
 from django.core import management
 from django.core.management.base import BaseCommand
 
-from recipes.models import Ingredient, Tag, Recipe, RecipeIngredient, RecipeTag
+from recipes.models import (
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    RecipeTag,
+    Tag,
+)
 
-CSV_DIR = "../data/data/"
+CSV_DIR = "../data/"
 FILE_NAMES = {
     "ingredients": "ingredients.csv",
     "tags": "tags.csv",
@@ -12,6 +18,8 @@ FILE_NAMES = {
     "recipes": "recipes.csv",
 }
 IMAGE_EXAMPLE = "data:image/png;base64,iVBOR"
+SUPERUSER_USERNAME_PASSWORD = "admin"
+SUPERUSER_EMAIL = "admin@admin.com"
 
 User = get_user_model()
 
@@ -51,7 +59,7 @@ def import_users(file_path: str):
             last_name = data[2]
             password = data[3]
             email = data[4].rstrip()
-            User.objects.get_or_create(
+            user, _ = User.objects.get_or_create(
                 username=username,
                 first_name=first_name,
                 last_name=last_name,
@@ -59,6 +67,8 @@ def import_users(file_path: str):
                 email=email,
                 avatar=IMAGE_EXAMPLE,
             )
+            user.set_password(user.password)
+            user.save()
 
 
 def import_recipes(file_path: str):
@@ -86,7 +96,7 @@ def import_recipes(file_path: str):
             for ingredient in ingredients.split():
                 RecipeIngredient.objects.get_or_create(
                     recipe=recipe,
-                    ingredient=Ingredient.objects.get(pk=int(ingredient))
+                    ingredient=Ingredient.objects.get(pk=int(ingredient)),
                 )
 
 
@@ -94,6 +104,9 @@ class Command(BaseCommand):
     help = "import CSV Data into model Ingredient"
 
     management.call_command("migrate")
+    User.objects.create_superuser(
+        username="admin", password="admin", email="admin@admin.com"
+    )
 
     def handle(self, *args, **options):
         import_ingredients(CSV_DIR + FILE_NAMES.get("ingredients"))
