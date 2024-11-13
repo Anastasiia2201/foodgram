@@ -10,7 +10,7 @@ from recipes.models import (
     Tag,
 )
 
-CSV_DIR = "../data/data/"
+CSV_DIR = "../data"
 FILE_NAMES = {
     "ingredients": "ingredients.csv",
     "tags": "tags.csv",
