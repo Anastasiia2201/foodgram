@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
+    "djoser",
     "django_url_shortener",
     "users.apps.UsersConfig",
     "api.apps.ApiConfig",
@@ -66,6 +67,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "foodgram_api.wsgi.application"
 
+
 if not os.getenv("SQLITE_DB"):
     DATABASES = {
         "default": {
@@ -88,9 +90,10 @@ else:
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME":
-        ("django.contrib.auth.password_validation."
-         "UserAttributeSimilarityValidator"),
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        ),
     },
     {
         "NAME":

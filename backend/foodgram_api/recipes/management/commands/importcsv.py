@@ -11,6 +11,7 @@ from recipes.models import (
 )
 
 CSV_DIR = "../data/"
+
 FILE_NAMES = {
     "ingredients": "ingredients.csv",
     "tags": "tags.csv",

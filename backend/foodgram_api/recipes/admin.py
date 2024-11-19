@@ -39,4 +39,7 @@ class IngredientAdmin(admin.ModelAdmin):
     list_display = ("name", "measurement_unit")
 
 
-admin.site.register(Tag)
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    search_fields = ("name",)
+    list_display = ("name",)

@@ -7,6 +7,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
     path("s/", include("django_url_shortener.urls")),
+    path("auth/", include("djoser.urls")),
 ]
 
 if settings.DEBUG:

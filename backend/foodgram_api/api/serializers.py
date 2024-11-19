@@ -108,15 +108,6 @@ class UserShortSerializer(serializers.ModelSerializer):
         )
 
 
-class TokenSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(required=True)
-    email = serializers.CharField(required=True)
-
-    class Meta:
-        fields = ("password", "email")
-        model = User
-
-
 class UpdateAvatarSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=True, allow_null=False)
 

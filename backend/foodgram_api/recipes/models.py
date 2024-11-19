@@ -14,7 +14,7 @@ User = get_user_model()
 
 
 class Tag(models.Model):
-    """Модель Tags (Теги)."""
+    """Теги."""
 
     name = models.CharField(
         verbose_name="Название тега", max_length=CHAR_FIELD_MAX_LENGTH
@@ -34,7 +34,7 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    """Модель Ingredients (Ингредиенты)."""
+    """Ингредиенты."""
 
     name = models.CharField(
         verbose_name="Название", max_length=CHAR_FIELD_MAX_LENGTH
@@ -55,7 +55,7 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
-    """Модель Recipes (Рецепты)."""
+    """Рецепты."""
 
     name = models.CharField(
         verbose_name="Название", max_length=CHAR_FIELD_MAX_LENGTH
@@ -89,11 +89,13 @@ class Recipe(models.Model):
         verbose_name="Тег",
         through="RecipeTag",
         blank=False,
+        related_name="recipes",
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         verbose_name="Ингредиент",
         through="RecipeIngredient",
+        related_name="recipes",
     )
 
     class Meta:
@@ -106,7 +108,7 @@ class Recipe(models.Model):
 
 
 class RecipeTag(models.Model):
-    """Модель RecepiesTags (связь тегов с рецептами)."""
+    """Связь тегов с рецептами."""
 
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE, verbose_name="Тег")
@@ -125,7 +127,7 @@ class RecipeTag(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    """Модель RecepiesIngredients (связь ингредиентов с рецептами)."""
+    """Связь ингредиентов с рецептами."""
 
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(
@@ -189,7 +191,7 @@ class ShoppingCart(BaseCartFavoriteSubscription):
 
 
 class Favorite(BaseCartFavoriteSubscription):
-    """Модель Favorites (Избранное)."""
+    """Избранное."""
 
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE, related_name="favorites"
@@ -207,7 +209,7 @@ class Favorite(BaseCartFavoriteSubscription):
 
 
 class Subscription(BaseCartFavoriteSubscription):
-    """Модель Subscriptions (Подписки)."""
+    """Подписки."""
 
     subscribee = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="subscribers"
