@@ -9,7 +9,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
@@ -47,7 +47,7 @@ def output_ingredients(ingredients):
     ) in ingredients_list.items():
         ingredients += (f"{ingredient_name} "
                         f"({ingredient_measurement[0]}) — "
-                        f"{str(ingredient_measurement[1])})")
+                        f"{str(ingredient_measurement[1])}\n")
     return ingredients
 
 
@@ -88,7 +88,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели User."""
 
     serializer_class = UserSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         users = User.objects.annotate(
@@ -221,7 +221,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Recipe."""
 
     serializer_class = RecipeDisplaySerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
     filter_backends = [
         DjangoFilterBackend,
     ]
