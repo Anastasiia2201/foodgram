@@ -1,13 +1,7 @@
 from django.contrib import admin
 
-from .models import (
-    Favorite,
-    Ingredient,
-    Recipe,
-    RecipeIngredient,
-    RecipeTag,
-    Tag,
-)
+from .models import (Favorite, Ingredient, Recipe, RecipeIngredient, RecipeTag,
+                     Tag)
 
 
 class TagInline(admin.TabularInline):
@@ -28,7 +22,9 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ("tags__name",)
     filter_horizontal = ("tags",)
 
-    @admin.display(description="Число добавлений рецепта в избранное")
+    @admin.display(
+        description="Число добавлений рецепта в избранное"
+    )
     def get_favorites(self, obj):
         return Favorite.objects.filter(recipe=obj.id).count()
 

@@ -30,7 +30,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(max_length=256, verbose_name="Название"),
+                    models.CharField(
+                        max_length=256, verbose_name="Название"
+                    ),
                 ),
                 (
                     "measurement_unit",
@@ -61,7 +63,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(max_length=256, verbose_name="Название"),
+                    models.CharField(
+                        max_length=256, verbose_name="Название"
+                    ),
                 ),
                 (
                     "cooking_time",
@@ -234,7 +238,8 @@ class Migration(migrations.Migration):
                         default=1,
                         validators=[
                             django.core.validators.MinValueValidator(
-                                1, message="Количество не может быть меньше 1."
+                                1,
+                                message="Количество не может быть меньше 1.",
                             )
                         ],
                         verbose_name="Количество ингредиента",
@@ -318,7 +323,9 @@ class Migration(migrations.Migration):
             constraint=models.CheckConstraint(
                 check=models.Q(
                     _negated=True,
-                    user=django.db.models.expressions.F("subscriber"),
+                    user=django.db.models.expressions.F(
+                        "subscriber"
+                    ),
                 ),
                 name="cant_self_subscribe",
             ),
@@ -326,7 +333,8 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="shoppingcart",
             constraint=models.UniqueConstraint(
-                fields=("user", "recipe"), name="in_cart_once_per_user"
+                fields=("user", "recipe"),
+                name="in_cart_once_per_user",
             ),
         ),
         migrations.AddConstraint(
@@ -345,7 +353,8 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="favorite",
             constraint=models.UniqueConstraint(
-                fields=("recipe", "user"), name="favorite_once_per_user"
+                fields=("recipe", "user"),
+                name="favorite_once_per_user",
             ),
         ),
     ]

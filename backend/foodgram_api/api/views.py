@@ -10,37 +10,22 @@ from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from recipes.constants import RECIPES_LIMIT
-from recipes.models import (
-    Favorite,
-    Ingredient,
-    Recipe,
-    ShoppingCart,
-    Subscription,
-    Tag,
-)
+from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
+                            Subscription, Tag)
 
 from .filters import RecipeFilter
 from .permissions import IsAuthorOrAdmin
-from .serializers import (
-    IngredientSerializer,
-    RecipeDisplaySerializer,
-    RecipeInputSerializer,
-    RecipeShortDisplaySerializer,
-    SignupSerializer,
-    TagSerializer,
-    UpdateAvatarSerializer,
-    UserSerializer,
-    UserShortSerializer,
-    UserSubsciptionsSerializer,
-)
+from .serializers import (IngredientSerializer, RecipeDisplaySerializer,
+                          RecipeInputSerializer, RecipeShortDisplaySerializer,
+                          SignupSerializer, TagSerializer,
+                          UpdateAvatarSerializer, UserSerializer,
+                          UserShortSerializer, UserSubsciptionsSerializer)
 
 User = get_user_model()
 

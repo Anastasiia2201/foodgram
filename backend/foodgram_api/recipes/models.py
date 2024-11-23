@@ -3,12 +3,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import F, Q
 
-from recipes.constants import (
-    AMOUNT_MAX,
-    AMOUNT_MIN,
-    CHAR_FIELD_MAX_LENGTH,
-    RECIPE_DIR,
-)
+from recipes.constants import (AMOUNT_MAX, AMOUNT_MIN, CHAR_FIELD_MAX_LENGTH,
+                               RECIPE_DIR)
 
 User = get_user_model()
 
@@ -17,7 +13,8 @@ class Tag(models.Model):
     """Теги."""
 
     name = models.CharField(
-        verbose_name="Название тега", max_length=CHAR_FIELD_MAX_LENGTH
+        verbose_name="Название тега",
+        max_length=CHAR_FIELD_MAX_LENGTH,
     )
     slug = models.SlugField(
         unique=True,
@@ -111,7 +108,9 @@ class RecipeTag(models.Model):
     """Связь тегов с рецептами."""
 
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, verbose_name="Тег")
+    tag = models.ForeignKey(
+        Tag, on_delete=models.CASCADE, verbose_name="Тег"
+    )
 
     def __str__(self):
         return f"{self.recipe} {self.tag}"
@@ -131,7 +130,9 @@ class RecipeIngredient(models.Model):
 
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(
-        Ingredient, on_delete=models.CASCADE, verbose_name="Ингредиент"
+        Ingredient,
+        on_delete=models.CASCADE,
+        verbose_name="Ингредиент",
     )
     amount = models.PositiveSmallIntegerField(
         default=1,
@@ -185,7 +186,8 @@ class ShoppingCart(BaseCartFavoriteSubscription):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "recipe"], name="in_cart_once_per_user"
+                fields=["user", "recipe"],
+                name="in_cart_once_per_user",
             )
         ]
 
@@ -203,7 +205,8 @@ class Favorite(BaseCartFavoriteSubscription):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["recipe", "user"], name="favorite_once_per_user"
+                fields=["recipe", "user"],
+                name="favorite_once_per_user",
             )
         ]
 
@@ -224,6 +227,7 @@ class Subscription(BaseCartFavoriteSubscription):
                 fields=["subscribee", "user"], name="subscribe_once"
             ),
             models.CheckConstraint(
-                name="cant_self_subscribe", check=~Q(user=F("subscribee"))
+                name="cant_self_subscribe",
+                check=~Q(user=F("subscribee")),
             ),
         ]

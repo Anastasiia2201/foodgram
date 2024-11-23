@@ -9,12 +9,7 @@ from rest_framework.fields import CurrentUserDefault
 from rest_framework.validators import UniqueValidator
 
 from recipes.constants import MAX_LENGTH_EMAIL, MAX_LENGTH_USERNAME
-from recipes.models import (
-    Ingredient,
-    Recipe,
-    RecipeIngredient,
-    Tag,
-)
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 
 User = get_user_model()
 

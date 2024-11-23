@@ -5,15 +5,8 @@ from django.core import management
 from django.core.management.base import BaseCommand
 from django.db import models
 
-from recipes.models import (
-    Ingredient,
-    Recipe,
-    RecipeIngredient,
-    RecipeTag,
-    Subscription,
-    Favorite,
-    Tag,
-)
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            RecipeTag, Subscription, Tag)
 
 User = get_user_model()
 
@@ -28,6 +21,7 @@ MODEL_FILES = {
     Subscription: "subscriptions.csv",
 }
 
+
 def import_model(file_path: str, model: models.Model):
     """Импорт данных из cvs файла в модель."""
     id = 0
@@ -37,10 +31,13 @@ def import_model(file_path: str, model: models.Model):
         reader = csv.DictReader(file)
         for row in reader:
             id += 1
-            entity, _ = model.objects.get_or_create(id=id, defaults=row)
+            entity, _ = model.objects.get_or_create(
+                id=id, defaults=row
+            )
             if model == User:
                 entity.set_password(entity.password)
                 entity.save()
+
 
 def import_recipe(file_path):
     id = 0
@@ -54,15 +51,18 @@ def import_recipe(file_path):
             recipe, _ = Recipe.objects.get_or_create(
                 id=id,
                 defaults=row,
-                author=User.objects.get(pk=author))
+                author=User.objects.get(pk=author),
+            )
             for tag in tags:
                 RecipeTag.objects.get_or_create(
                     recipe=recipe, tag=Tag.objects.get(pk=tag)
                 )
             for ingredient in ingredients:
                 RecipeIngredient.objects.get_or_create(
-                    recipe=recipe, ingredient=Ingredient.objects.get(pk=ingredient)
+                    recipe=recipe,
+                    ingredient=Ingredient.objects.get(pk=ingredient),
                 )
+
 
 def import_favorite(file_path):
     id = 0
@@ -73,7 +73,9 @@ def import_favorite(file_path):
             Favorite.objects.get_or_create(
                 id=id,
                 user=User.objects.get(pk=row["user"]),
-                recipe=Recipe.objects.get(pk=row["recipe"]))
+                recipe=Recipe.objects.get(pk=row["recipe"]),
+            )
+
 
 def import_subscriptions(file_path):
     id = 0
@@ -84,7 +86,8 @@ def import_subscriptions(file_path):
             Subscription.objects.get_or_create(
                 id=id,
                 user=User.objects.get(pk=row["user"]),
-                subscribee=User.objects.get(pk=row["subscribee"]))
+                subscribee=User.objects.get(pk=row["subscribee"]),
+            )
 
 
 class Command(BaseCommand):
@@ -92,8 +95,11 @@ class Command(BaseCommand):
 
     management.call_command("migrate")
     User.objects.create_superuser(
-        username="admin", password="admin", email="admin@admin.com",
-        first_name="Имя", last_name="Фамилия"
+        username="admin",
+        password="admin",
+        email="admin@admin.com",
+        first_name="Имя",
+        last_name="Фамилия",
     )
 
     def handle(self, *args, **options):

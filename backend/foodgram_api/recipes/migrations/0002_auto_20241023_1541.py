@@ -20,7 +20,8 @@ class Migration(migrations.Migration):
                         1, message="Время не может быть меньше 1."
                     ),
                     django.core.validators.MaxValueValidator(
-                        9999, message="Время не может быть больше 9999."
+                        9999,
+                        message="Время не может быть больше 9999.",
                     ),
                 ],
                 verbose_name="Время готовки в мин.",
@@ -53,10 +54,12 @@ class Migration(migrations.Migration):
                 default=1,
                 validators=[
                     django.core.validators.MinValueValidator(
-                        1, message="Количество не может быть меньше 1."
+                        1,
+                        message="Количество не может быть меньше 1.",
                     ),
                     django.core.validators.MaxValueValidator(
-                        9999, message="Количество не может быть больше 9999."
+                        9999,
+                        message="Количество не может быть больше 9999.",
                     ),
                 ],
                 verbose_name="Количество ингредиента",

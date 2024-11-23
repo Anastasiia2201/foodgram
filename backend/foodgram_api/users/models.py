@@ -2,11 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from recipes.constants import (
-    AVATAR_DIR,
-    CHAR_FIELD_MAX_LENGTH,
-    MAX_LENGTH_EMAIL,
-)
+from recipes.constants import (AVATAR_DIR, CHAR_FIELD_MAX_LENGTH,
+                               MAX_LENGTH_EMAIL)
 
 
 class Roles(models.TextChoices):

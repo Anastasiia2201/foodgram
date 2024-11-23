@@ -36,7 +36,9 @@ class Migration(migrations.Migration):
             model_name="recipe",
             name="image",
             field=models.ImageField(
-                default=1, upload_to="recipes/images/", verbose_name="Картинка"
+                default=1,
+                upload_to="recipes/images/",
+                verbose_name="Картинка",
             ),
             preserve_default=False,
         ),

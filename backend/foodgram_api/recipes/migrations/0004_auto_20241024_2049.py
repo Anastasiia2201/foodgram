@@ -35,7 +35,9 @@ class Migration(migrations.Migration):
             constraint=models.CheckConstraint(
                 check=models.Q(
                     _negated=True,
-                    user=django.db.models.expressions.F("subscribee"),
+                    user=django.db.models.expressions.F(
+                        "subscribee"
+                    ),
                 ),
                 name="cant_self_subscribe",
             ),
