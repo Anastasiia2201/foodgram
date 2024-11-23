@@ -1,3 +1,5 @@
-username1,first_name1,last_name1,password1,email1
-username2,first_name2,last_name2,password2,email2
-username3,first_name3,last_name3,password3,email3
+username,first_name,last_name,password,email
+Foodie123,Александр,Смирнов,password,email@email.com
+TechGuru,Екатерина,Иванова,password1,email1@email.com
+SunnySky,Дмитрий,Петров,password2,email2@email.com
+ArtisticSoul,Анна,Кузнецова,password3,email3@email.com

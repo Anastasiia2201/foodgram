@@ -60,31 +60,25 @@ def output_ingredients(ingredients):
         ingredient_name,
         ingredient_measurement,
     ) in ingredients_list.items():
-        ingredients += (
-            ingredient_name
-            + "("
-            + ingredient_measurement[0]
-            + ")"
-            + " — "
-            + str(ingredient_measurement[1])
-            + "\n"
-        )
+        ingredients += (f"{ingredient_name} "
+                        f"({ingredient_measurement[0]}) — "
+                        f"{str(ingredient_measurement[1])})")
     return ingredients
 
 
 def recipe_add(request, id, model):
     """Добавление рецепта в избранное или корзину."""
     user = request.user
-    recipe = get_object_or_404(Recipe, pk=id)
-    entry = model.objects.filter(user=user, recipe=recipe).first()
     if request.method == "POST":
+        recipe = get_object_or_404(Recipe, pk=id)
+        entry = model.objects.filter(user=user, recipe=recipe).first()
         if entry:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         serializer = RecipeShortDisplaySerializer(recipe)
         model.objects.create(user=user, recipe=recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    deleted = model.objects.filter(user=user, recipe=recipe).delete()
-    if deleted[0]:
+    deleted, *_ = model.objects.filter(user=user, recipe=recipe).delete()
+    if deleted:
         return Response(status=status.HTTP_204_NO_CONTENT)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -112,7 +106,7 @@ class UserViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
-        users = User.objects.all().annotate(
+        users = User.objects.annotate(
             is_subscribed=ExpressionWrapper(
                 Q(
                     id__in=Subscription.objects.filter(

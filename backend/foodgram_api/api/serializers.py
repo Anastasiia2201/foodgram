@@ -276,16 +276,6 @@ class UserSubsciptionsSerializer(serializers.ModelSerializer):
         "user_recipes", allow_null=True
     )
 
-    def user_recipes(self, instance):
-        recipes_limit = int(self.context["recipes_limit"])
-        serilizer = RecipeShortDisplaySerializer(
-            Recipe.objects.filter(author=instance.id).order_by("id")[
-                :recipes_limit
-            ],
-            many=True,
-        )
-        return serilizer.data
-
     class Meta:
         model = User
         fields = (
@@ -299,3 +289,13 @@ class UserSubsciptionsSerializer(serializers.ModelSerializer):
             "recipes_count",
             "avatar",
         )
+
+    def user_recipes(self, instance):
+        recipes_limit = int(self.context["recipes_limit"])
+        serilizer = RecipeShortDisplaySerializer(
+            Recipe.objects.filter(author=instance.id).order_by("id")[
+                :recipes_limit
+            ],
+            many=True,
+        )
+        return serilizer.data
