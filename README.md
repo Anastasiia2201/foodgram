@@ -1,3 +1,8 @@
+ip: 51.250.21.100
+домен: kras-foodgram2.ddns.net
+email: admin@admin.com
+пароль: admin
+
 # Проект Foodgram
 
 ![workflow status badge](https://github.com/Anastasiia2201/foodgram/actions/workflows/main.yml/badge.svg)
