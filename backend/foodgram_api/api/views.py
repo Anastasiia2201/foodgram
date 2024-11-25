@@ -51,23 +51,6 @@ def output_ingredients(ingredients):
     return ingredients
 
 
-def recipe_add(request, id, model):
-    """Добавление рецепта в избранное или корзину."""
-    user = request.user
-    if request.method == "POST":
-        recipe = get_object_or_404(Recipe, pk=id)
-        entry = model.objects.filter(user=user, recipe=recipe).first()
-        if entry:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        serializer = RecipeShortDisplaySerializer(recipe)
-        model.objects.create(user=user, recipe=recipe)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    deleted, *_ = model.objects.filter(user=user, recipe=recipe).delete()
-    if deleted:
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
 class TagViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
     """Вьюсет для модели Tag."""
 
@@ -296,6 +279,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         return Response({"short-link": short_url}, status=status.HTTP_200_OK)
 
+    def recipe_add(self, request, id, model):
+        """Добавление рецепта в избранное или корзину."""
+        user = request.user
+        recipe = get_object_or_404(Recipe, pk=id)
+        entry = model.objects.filter(user=user, recipe=recipe).first()
+        if entry:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer = RecipeShortDisplaySerializer(recipe)
+        model.objects.create(user=user, recipe=recipe)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def recipe_delete(self, request, id, model):
+        """Удаление рецепта из избранного или корзины."""
+        user = request.user
+        recipe = get_object_or_404(Recipe, pk=id)
+        deleted, *_ = model.objects.filter(user=user, recipe=recipe).delete()
+        if deleted:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
     @action(
         detail=False,
         methods=["POST", "DELETE"],
@@ -304,7 +307,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def shopping_cart(self, request, id):
         """Добавить рецепт в список покупок или удалить из него."""
-        return recipe_add(request, id, ShoppingCart)
+        if request.method == "POST":
+            return self.recipe_add(request, id, ShoppingCart)
+        return self.recipe_delete(request, id, ShoppingCart)
 
     @action(
         detail=False,
@@ -314,7 +319,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def favorite(self, request, id):
         """Добавить рецепт в избранное или удалить из него."""
-        return recipe_add(request, id, Favorite)
+        if request.method == "POST":
+            return self.recipe_add(request, id, Favorite)
+        return self.recipe_delete(request, id, Favorite)
 
     @action(
         detail=False,
