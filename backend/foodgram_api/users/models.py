@@ -15,7 +15,10 @@ class User(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username", "password"]
     avatar = models.ImageField(
-        upload_to=AVATAR_DIR, verbose_name="Аватар", null=True, blank=True
+        upload_to=AVATAR_DIR,
+        verbose_name="Аватар",
+        null=True,
+        blank=True,
     )
     role = models.CharField(
         verbose_name="Роль",
@@ -24,11 +27,13 @@ class User(AbstractUser):
         default=Roles.USER,
     )
     email = models.EmailField(
-        unique=True, max_length=MAX_LENGTH_EMAIL, verbose_name="Почта"
+        unique=True,
+        max_length=MAX_LENGTH_EMAIL,
+        verbose_name="Почта",
     )
 
     class Meta:
-        verbose_name = "Пользователь"
+        verbose_name = "пользователя"
         verbose_name_plural = "Пользователи"
         ordering = ("id",)
 

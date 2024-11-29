@@ -4,6 +4,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import User
 
 
+@admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_display = UserAdmin.list_display + (
         "avatar",
@@ -16,7 +17,6 @@ class CustomUserAdmin(UserAdmin):
     search_fields = (
         "email",
         "username",
+        "last_name",
+        "first_name",
     )
-
-
-admin.site.register(User, CustomUserAdmin)

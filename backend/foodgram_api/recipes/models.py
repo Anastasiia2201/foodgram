@@ -22,7 +22,7 @@ class Tag(models.Model):
     )
 
     class Meta:
-        verbose_name = "Тег"
+        verbose_name = "тег"
         verbose_name_plural = "Теги"
         ordering = ("slug",)
 
@@ -43,7 +43,7 @@ class Ingredient(models.Model):
     )
 
     class Meta:
-        verbose_name = "Ингредиент"
+        verbose_name = "ингредиент"
         verbose_name_plural = "Ингредиенты"
         ordering = ("name",)
 
@@ -96,7 +96,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        verbose_name = "Рецепт"
+        verbose_name = "рецепт"
         verbose_name_plural = "Рецепты"
         ordering = ("name",)
 
@@ -166,7 +166,9 @@ class RecipeIngredient(models.Model):
 class BaseCartFavoriteSubscription(models.Model):
     """Абстрактная модель для моделей ShoppingCarts, Favorites."""
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, verbose_name="Пользователь"
+    )
 
     class Meta:
         abstract = True
@@ -177,7 +179,10 @@ class ShoppingCart(BaseCartFavoriteSubscription):
     """Модель ShoppingCarts (Список покупок)."""
 
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, related_name="in_cart"
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name="in_cart",
+        verbose_name="Рецепт",
     )
 
     def __str__(self):
@@ -190,13 +195,18 @@ class ShoppingCart(BaseCartFavoriteSubscription):
                 name="in_cart_once_per_user",
             )
         ]
+        verbose_name = "корзину"
+        verbose_name_plural = "Корзины"
 
 
 class Favorite(BaseCartFavoriteSubscription):
     """Избранное."""
 
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, related_name="favorites"
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name="favorites",
+        verbose_name="Рецепт",
     )
 
     def __str__(self):
@@ -209,13 +219,18 @@ class Favorite(BaseCartFavoriteSubscription):
                 name="favorite_once_per_user",
             )
         ]
+        verbose_name = "избранное"
+        verbose_name_plural = "Избранное"
 
 
 class Subscription(BaseCartFavoriteSubscription):
     """Подписки."""
 
     subscribee = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="subscribers"
+        User,
+        on_delete=models.CASCADE,
+        related_name="subscribers",
+        verbose_name="Подписчик",
     )
 
     def __str__(self):
@@ -231,3 +246,5 @@ class Subscription(BaseCartFavoriteSubscription):
                 check=~Q(user=F("subscribee")),
             ),
         ]
+        verbose_name = "подписку"
+        verbose_name_plural = "Подписки"

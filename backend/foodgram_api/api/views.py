@@ -19,13 +19,14 @@ from recipes.constants import RECIPES_LIMIT
 from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
                             Subscription, Tag)
 
-from .filters import RecipeFilter
+from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsAuthorOrAdmin
-from .serializers import (IngredientSerializer, RecipeDisplaySerializer,
-                          RecipeInputSerializer, RecipeShortDisplaySerializer,
-                          SignupSerializer, TagSerializer,
-                          UpdateAvatarSerializer, UserSerializer,
-                          UserShortSerializer, UserSubsciptionsSerializer)
+from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
+                          RecipeDisplaySerializer, RecipeInputSerializer,
+                          ShoppingCartRecipeSerializer, SignupSerializer,
+                          TagSerializer, UpdateAvatarSerializer,
+                          UserSerializer, UserShortSerializer,
+                          UserSubsciptionsSerializer, UserSubscribeSerializer)
 
 User = get_user_model()
 
@@ -45,9 +46,11 @@ def output_ingredients(ingredients):
         ingredient_name,
         ingredient_measurement,
     ) in ingredients_list.items():
-        ingredients += (f"{ingredient_name} "
-                        f"({ingredient_measurement[0]}) — "
-                        f"{str(ingredient_measurement[1])}\n")
+        ingredients += (
+            f"{ingredient_name} "
+            f"({ingredient_measurement[0]}) — "
+            f"{str(ingredient_measurement[1])}\n"
+        )
     return ingredients
 
 
@@ -58,13 +61,15 @@ class TagViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
     serializer_class = TagSerializer
 
 
-class IngredientViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
+class IngredientViewSet(
+    RetrieveModelMixin, ListModelMixin, GenericViewSet
+):
     """Вьюсет для модели Ingredient."""
 
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["id", "name"]
+    filterset_class = IngredientFilter
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -90,11 +95,15 @@ class UserViewSet(viewsets.ModelViewSet):
     def create(self, request):
         """Регистрация пользователя."""
         context = {"request": self.request}
-        serializer = SignupSerializer(data=request.data, context=context)
+        serializer = SignupSerializer(
+            data=request.data, context=context
+        )
         serializer.is_valid(raise_exception=True)
         new_user = serializer.save()
         serializer = UserShortSerializer(new_user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED
+        )
 
     @action(
         detail=False,
@@ -122,7 +131,9 @@ class UserViewSet(viewsets.ModelViewSet):
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                serializer.data, status=status.HTTP_200_OK
+            )
         request.user.avatar.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -135,10 +146,14 @@ class UserViewSet(viewsets.ModelViewSet):
     def subscriptions(self, request):
         """Возвращает пользователей, на которых подписан текущий."""
         user = request.user
-        recipes_limit = request.GET.get("recipes_limit", RECIPES_LIMIT)
+        recipes_limit = request.GET.get(
+            "recipes_limit", RECIPES_LIMIT
+        )
         context = {"recipes_limit": recipes_limit}
         queryset = self.get_queryset().filter(
-            pk__in=user.subscription_set.values_list("subscribee", flat=True)
+            pk__in=user.subscription_set.values_list(
+                "subscribee", flat=True
+            )
         )
         page = self.paginate_queryset(queryset)
         serializer = UserSubsciptionsSerializer(
@@ -155,28 +170,25 @@ class UserViewSet(viewsets.ModelViewSet):
     def subscribe(self, request, id):
         """Подписаться на пользователя."""
         user = request.user
-        recipes_limit = request.GET.get("recipes_limit", RECIPES_LIMIT)
+        recipes_limit = request.GET.get(
+            "recipes_limit", RECIPES_LIMIT
+        )
         subscribee = get_object_or_404(self.get_queryset(), pk=id)
         context = {
             "recipes_limit": recipes_limit,
+            "subscribee": subscribee,
         }
         if request.method == "POST":
-            if Subscription.objects.filter(
-                subscribee=subscribee.id, user=user
-            ).exists():
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-            serializer = UserSubsciptionsSerializer(
-                subscribee, context=context
+            serializer = UserSubscribeSerializer(
+                data={"subscribee": subscribee.id, "user": user.id},
+                context=context,
             )
-            if subscribee.id != user.id:
-                Subscription.objects.create(subscribee=subscribee, user=user)
-                return Response(
-                    serializer.data, status=status.HTTP_201_CREATED
-                )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return Response(
-                "Нельзя подписаться на самого себя!",
-                status=status.HTTP_400_BAD_REQUEST,
+                serializer.data, status=status.HTTP_201_CREATED
             )
+
         deleted, _ = Subscription.objects.filter(
             subscribee=subscribee.id, user=user.id
         ).delete()
@@ -193,17 +205,22 @@ class UserViewSet(viewsets.ModelViewSet):
     def set_password(self, request):
         """Изменение пароля текущего пользователя."""
         context = {"request": self.request}
-        serializer = SetPasswordSerializer(data=request.data, context=context)
+        serializer = SetPasswordSerializer(
+            data=request.data, context=context
+        )
         serializer.is_valid(raise_exception=True)
-        self.request.user.set_password(serializer.data["new_password"])
+        self.request.user.set_password(
+            serializer.data["new_password"]
+        )
         self.request.user.save()
-        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            serializer.data, status=status.HTTP_204_NO_CONTENT
+        )
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели Recipe."""
 
-    serializer_class = RecipeDisplaySerializer
     pagination_class = PageNumberPagination
     filter_backends = [
         DjangoFilterBackend,
@@ -215,9 +232,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_queryset(self):
-        recipes = Recipe.objects.select_related("author").prefetch_related(
-            "tags", "ingredients"
-        )
+        recipes = Recipe.objects.select_related(
+            "author"
+        ).prefetch_related("tags", "ingredients")
         recipes = recipes.annotate(
             is_favorited=ExpressionWrapper(
                 Q(
@@ -240,32 +257,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         return recipes
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"user": self.request.user.id})
+        return context
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return RecipeDisplaySerializer
+        return RecipeInputSerializer
+
     def get_permissions(self):
         if self.request.method in ["PATCH", "DELETE"]:
-            self.permission_classes = [IsAuthenticated, IsAuthorOrAdmin]
+            self.permission_classes = [
+                IsAuthenticated,
+                IsAuthorOrAdmin,
+            ]
         else:
             self.permission_classes = [IsAuthenticatedOrReadOnly]
         return super(self.__class__, self).get_permissions()
-
-    def create(self, request):
-        """Создание рецепта."""
-        serializer = RecipeInputSerializer(
-            data=request.data, context={"request": self.request}
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def partial_update(self, request, pk=None):
-        """Обновление рецепта."""
-        recipe = get_object_or_404(Recipe, pk=pk)
-        serializer = RecipeInputSerializer(
-            recipe, data=request.data, context={"request": self.request}
-        )
-        serializer.is_valid(raise_exception=True)
-        self.check_object_permissions(self.request, recipe)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
         detail=False,
@@ -277,24 +287,31 @@ class RecipeViewSet(viewsets.ModelViewSet):
         created, short_url = shorten_url(
             settings.BASE_URL + request.path[4:-9]
         )
-        return Response({"short-link": short_url}, status=status.HTTP_200_OK)
+        return Response(
+            {"short-link": short_url}, status=status.HTTP_200_OK
+        )
 
-    def recipe_add(self, request, id, model):
+    def recipe_add(self, request, id, serializer):
         """Добавление рецепта в избранное или корзину."""
         user = request.user
         recipe = get_object_or_404(Recipe, pk=id)
-        entry = model.objects.filter(user=user, recipe=recipe).first()
-        if entry:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        serializer = RecipeShortDisplaySerializer(recipe)
-        model.objects.create(user=user, recipe=recipe)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        serializer = serializer(
+            data={"recipe": id, "user": user.id},
+            context={"recipe": recipe},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED
+        )
 
     def recipe_delete(self, request, id, model):
         """Удаление рецепта из избранного или корзины."""
         user = request.user
         recipe = get_object_or_404(Recipe, pk=id)
-        deleted, *_ = model.objects.filter(user=user, recipe=recipe).delete()
+        deleted, *_ = model.objects.filter(
+            user=user, recipe=recipe
+        ).delete()
         if deleted:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -308,7 +325,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, id):
         """Добавить рецепт в список покупок или удалить из него."""
         if request.method == "POST":
-            return self.recipe_add(request, id, ShoppingCart)
+            return self.recipe_add(
+                request, id, ShoppingCartRecipeSerializer
+            )
         return self.recipe_delete(request, id, ShoppingCart)
 
     @action(
@@ -320,7 +339,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, id):
         """Добавить рецепт в избранное или удалить из него."""
         if request.method == "POST":
-            return self.recipe_add(request, id, Favorite)
+            return self.recipe_add(
+                request, id, FavoriteRecipeSerializer
+            )
         return self.recipe_delete(request, id, Favorite)
 
     @action(
@@ -337,9 +358,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             "attachment; filename='shopping_cart.txt'"
         )
         ingredients = Ingredient.objects.filter(
-            recipes__in=ShoppingCart.objects.filter(user=user).values_list(
-                "recipe", flat=True
-            )
+            recipes__in=ShoppingCart.objects.filter(
+                user=user
+            ).values_list("recipe", flat=True)
         )
         ingredients = output_ingredients(ingredients.values_list())
         response.write(ingredients)

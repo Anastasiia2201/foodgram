@@ -20,6 +20,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="user",
             name="password",
-            field=models.CharField(max_length=128, verbose_name="Роль"),
+            field=models.CharField(
+                max_length=128, verbose_name="Роль"
+            ),
         ),
     ]
